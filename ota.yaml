@@ -67,21 +67,21 @@ tasks:
   test:
     context: host
     category: test
-    description: Run the default Go test suite.
-    run: go test ./pkg/...
+    description: Run backend Go package tests excluding Docker-backed integration suites.
+    run: go list ./pkg/... | grep -v '^github.com/grafana/grafana/pkg/tests/' | xargs go test
     execution:
       default_mode: native
       modes:
         native:
           context: host
-          run: go test ./pkg/...
+          run: go list ./pkg/... | grep -v '^github.com/grafana/grafana/pkg/tests/' | xargs go test
         container:
           context: app
-          run: go test ./pkg/...
+          run: go list ./pkg/... | grep -v '^github.com/grafana/grafana/pkg/tests/' | xargs go test
     depends_on:
       - setup
     safe_for_agent: true
-    notes: Run backend Go `pkg` tests.
+    notes: Runs backend Go package tests while excluding `pkg/tests` integration suites that require external Docker orchestration.
   verify:
     context: host
     category: test
