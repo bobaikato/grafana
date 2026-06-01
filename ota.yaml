@@ -1,0 +1,159 @@
+version: 1
+metadata:
+  ota:
+    minimum_version: "1.6.18"
+project:
+  name: grafana
+  description: Grafana backend readiness slice covering Go setup, build, and test paths
+execution:
+  default_context: host
+  contexts:
+    host:
+      backend: native
+    app:
+      backend: container
+      lifecycle: ephemeral
+      container:
+        image: golang:1.24-bookworm
+        engines:
+          - docker
+          - podman
+      attachments:
+        isolated_paths:
+          - .cache
+          - .go
+          - go/pkg/mod
+toolchains:
+  go:
+    provider: go
+    version: '1.24'
+tasks:
+  build:
+    context: host
+    category: build
+    description: Build the Go packages in this module.
+    run: go build ./...
+    execution:
+      default_mode: native
+      modes:
+        native:
+          context: host
+          run: go build ./...
+        container:
+          context: app
+          run: go build ./...
+    depends_on:
+      - setup
+    notes: Build the backend Go packages from repository root.
+  setup:
+    context: host
+    category: setup
+    description: Download Go module dependencies.
+    run: go mod download
+    execution:
+      default_mode: native
+      modes:
+        native:
+          context: host
+          run: go mod download
+        container:
+          context: app
+          run: go mod download
+    effects:
+      network: true
+      network_kind: dependency_hydration
+    notes: Download Go module dependencies for backend tasks.
+    internal: true
+  test:
+    context: host
+    category: test
+    description: Run the default Go test suite.
+    run: go test ./...
+    execution:
+      default_mode: native
+      modes:
+        native:
+          context: host
+          run: go test ./...
+        container:
+          context: app
+          run: go test ./...
+    depends_on:
+      - setup
+    safe_for_agent: true
+    notes: Run backend Go tests.
+  verify:
+    context: host
+    category: test
+    description: Aggregate Go build and test paths.
+    run: "true"
+    execution:
+      default_mode: native
+      modes:
+        native:
+          context: host
+          run: "true"
+        container:
+          context: app
+          run: "true"
+    depends_on:
+      - build
+      - test
+    safe_for_agent: true
+    notes: Contract-level verification path for backend slice.
+agent:
+  posture: readiness_strict
+  entrypoint: setup
+  default_task: verify
+  safe_tasks:
+  - test
+  - verify
+  verify_after_changes:
+  - verify
+  writable_paths:
+  - apps/advisor
+  - apps/annotation
+  - apps/correlations
+  - apps/dashboard
+  - apps/dashvalidator
+  - apps/example
+  - apps/iam
+  - apps/live
+  - apps/logsdrilldown
+  - apps/playlist
+  - apps/plugins
+  - apps/provisioning
+  - apps/quotas
+  - apps/secret
+  - apps/shorturl
+  - devenv
+  - docs
+  - hack
+  - kinds
+  - pkg
+  - public
+  - scripts
+  - tools
+  protected_paths:
+  - .github/workflows
+  - go.sum
+  - ota.yaml
+  inferred_boundary:
+    reviewed: false
+    provenance:
+      writable_paths:
+      - init:common_source_roots
+      - init:nested_project_root
+      - init:stack_source_scan
+      protected_paths:
+      - init:contract_file_default
+      - init:stack_companion_control_files
+  bootstrap:
+    ota:
+      note: Only install ota if it is missing and installation is approved.
+      sh: curl -fsSL https://dist.ota.run/install.sh | OTA_VERSION=v1.6.18 sh
+      powershell: $env:OTA_VERSION='v1.6.18'; irm https://dist.ota.run/install.ps1 | iex
+  notes: |
+    Use `ota tasks --safe --use` to inspect the approved agent task surface before execution.
+    Use `ota validate` before changes and `ota doctor` after edits.
+    Use `ota run verify` for backend slice verification.
