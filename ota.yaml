@@ -23,10 +23,10 @@ execution:
           - .cache
           - .go
           - go/pkg/mod
-toolchains:
-  go:
-    provider: go
-    version: '1.26.3'
+runtimes:
+  go: '1.26'
+tools:
+  go: '*'
 tasks:
   build:
     context: host
