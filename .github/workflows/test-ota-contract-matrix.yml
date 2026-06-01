@@ -69,10 +69,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Setup Go 1.24
+      - name: Setup Go 1.26
         uses: actions/setup-go@v6
         with:
-          go-version: "1.24.x"
+          go-version: "1.26.x"
 
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v5
@@ -132,6 +132,7 @@ jobs:
         run: ota up --workflow verify --native --dry-run .
 
       - name: Dry-run all non-internal tasks (container)
+        if: ${{ matrix.full_proof }}
         shell: bash
         run: |
           set -euo pipefail
@@ -144,6 +145,7 @@ jobs:
           done < ota-container-task-names.txt
 
       - name: Dry-run verify workflow (container)
+        if: ${{ matrix.full_proof }}
         shell: bash
         run: ota up --workflow verify --container --dry-run .
 
