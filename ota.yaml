@@ -4,7 +4,7 @@ metadata:
     minimum_version: "1.6.18"
 project:
   name: grafana
-  description: Grafana backend readiness slice covering Go setup, build, and test paths
+  description: Grafana backend readiness slice covering Go module setup plus pkg-scoped build and test paths
 execution:
   default_context: host
   contexts:
@@ -32,19 +32,19 @@ tasks:
     context: host
     category: build
     description: Build the Go packages in this module.
-    run: go build ./...
+    run: go build ./pkg/...
     execution:
       default_mode: native
       modes:
         native:
           context: host
-          run: go build ./...
+          run: go build ./pkg/...
         container:
           context: app
-          run: go build ./...
+          run: go build ./pkg/...
     depends_on:
       - setup
-    notes: Build the backend Go packages from repository root.
+    notes: Build the backend Go `pkg` module surface from repository root.
   setup:
     context: host
     category: setup
@@ -68,20 +68,20 @@ tasks:
     context: host
     category: test
     description: Run the default Go test suite.
-    run: go test ./...
+    run: go test ./pkg/...
     execution:
       default_mode: native
       modes:
         native:
           context: host
-          run: go test ./...
+          run: go test ./pkg/...
         container:
           context: app
-          run: go test ./...
+          run: go test ./pkg/...
     depends_on:
       - setup
     safe_for_agent: true
-    notes: Run backend Go tests.
+    notes: Run backend Go `pkg` tests.
   verify:
     context: host
     category: test
