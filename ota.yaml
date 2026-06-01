@@ -101,6 +101,16 @@ tasks:
       - test
     safe_for_agent: true
     notes: Contract-level verification path for backend slice.
+workflows:
+  default: verify
+  verify:
+    description: Canonical Grafana backend verification path for this contract slice.
+    setup:
+      task: setup
+    run:
+      task: verify
+    notes: |
+      Use `ota up --workflow verify` to run the declared setup plus backend verification sequence.
 agent:
   posture: readiness_strict
   entrypoint: setup
@@ -139,7 +149,7 @@ agent:
   - go.sum
   - ota.yaml
   inferred_boundary:
-    reviewed: false
+    reviewed: true
     provenance:
       writable_paths:
       - init:common_source_roots
@@ -154,6 +164,8 @@ agent:
       sh: curl -fsSL https://dist.ota.run/install.sh | OTA_VERSION=v1.6.18 sh
       powershell: $env:OTA_VERSION='v1.6.18'; irm https://dist.ota.run/install.ps1 | iex
   notes: |
+    Use `ota workflows` to inspect declared workflow paths.
+    Use `ota up --workflow verify` when you want setup and verification through one declared path.
     Use `ota tasks --safe --use` to inspect the approved agent task surface before execution.
     Use `ota validate` before changes and `ota doctor` after edits.
     Use `ota run verify` for backend slice verification.
