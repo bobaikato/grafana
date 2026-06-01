@@ -14,7 +14,7 @@ execution:
       backend: container
       lifecycle: ephemeral
       container:
-        image: golang:1.24-bookworm
+        image: golang:1.26-bookworm
         engines:
           - docker
           - podman
@@ -24,7 +24,7 @@ execution:
           - .go
           - go/pkg/mod
 runtimes:
-  go: '1.26'
+  go: '>=1.26.0 <1.27.0'
 tools:
   go: '*'
 tasks:
