@@ -149,7 +149,7 @@ jobs:
         shell: bash
         run: ota up --workflow verify --container --dry-run .
 
-      - name: Execute non-internal non-dev tasks (native, Ubuntu)
+      - name: Execute heavy proof tasks (native, Ubuntu)
         if: ${{ matrix.full_proof }}
         timeout-minutes: 120
         shell: bash
@@ -159,17 +159,17 @@ jobs:
           node -e 'const fs=require("fs");const t=JSON.parse(fs.readFileSync("ota-tasks.json","utf8")).tasks||[];for(const x of t){if((x.category||"")!=="dev")console.log(x.name)}' > ota-native-exec-task-names.txt
           while IFS= read -r task; do
             [ -z "$task" ] && continue
-            echo ">>> [native exec] $task"
+            echo ">>> [native heavy proof] $task"
             ota run "$task" --native --stream .
           done < ota-native-exec-task-names.txt
 
-      - name: Execute verify workflow (native, Ubuntu)
+      - name: Execute heavy verify workflow proof (native, Ubuntu)
         if: ${{ matrix.full_proof }}
         timeout-minutes: 90
         shell: bash
         run: ota up --workflow verify --native --stream .
 
-      - name: Execute non-internal non-dev tasks (container, Ubuntu)
+      - name: Execute heavy proof tasks (container, Ubuntu)
         if: ${{ matrix.full_proof }}
         timeout-minutes: 120
         shell: bash
@@ -179,11 +179,11 @@ jobs:
           node -e 'const fs=require("fs");const t=JSON.parse(fs.readFileSync("ota-tasks-container.json","utf8")).tasks||[];for(const x of t){if((x.category||"")!=="dev")console.log(x.name)}' > ota-container-exec-task-names.txt
           while IFS= read -r task; do
             [ -z "$task" ] && continue
-            echo ">>> [container exec] $task"
+            echo ">>> [container heavy proof] $task"
             ota run "$task" --container --stream .
           done < ota-container-exec-task-names.txt
 
-      - name: Execute verify workflow (container, Ubuntu)
+      - name: Execute heavy verify workflow proof (container, Ubuntu)
         if: ${{ matrix.full_proof }}
         timeout-minutes: 90
         shell: bash

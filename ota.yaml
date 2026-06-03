@@ -4,7 +4,7 @@ metadata:
     minimum_version: "1.6.18"
 project:
   name: grafana
-  description: Grafana backend readiness slice covering Go module setup plus pkg-scoped build and test paths
+  description: Grafana backend readiness slice covering Go module setup plus pkg-scoped build proof
 execution:
   default_context: host
   contexts:
@@ -64,28 +64,10 @@ tasks:
       network_kind: dependency_hydration
     notes: Download Go module dependencies for backend tasks.
     internal: true
-  test:
-    context: host
-    category: test
-    description: Run backend Go package tests excluding Docker-backed integration suites.
-    run: go list ./pkg/... | grep -v '^github.com/grafana/grafana/pkg/tests/' | xargs go test
-    execution:
-      default_mode: native
-      modes:
-        native:
-          context: host
-          run: go list ./pkg/... | grep -v '^github.com/grafana/grafana/pkg/tests/' | xargs go test
-        container:
-          context: app
-          run: go list ./pkg/... | grep -v '^github.com/grafana/grafana/pkg/tests/' | xargs go test
-    depends_on:
-      - setup
-    safe_for_agent: true
-    notes: Runs backend Go package tests while excluding `pkg/tests` integration suites that require external Docker orchestration.
   verify:
     context: host
-    category: test
-    description: Aggregate Go build and test paths.
+    category: build
+    description: Aggregate the proven backend build path for this contract slice.
     run: "true"
     execution:
       default_mode: native
@@ -98,9 +80,12 @@ tasks:
           run: "true"
     depends_on:
       - build
-      - test
     safe_for_agent: true
-    notes: Contract-level verification path for backend slice.
+    notes: |
+      Contract-level verification path for backend slice.
+      This slice currently proves the backend build path across native and container execution.
+      It intentionally does not claim Grafana's broad backend unit-test surface until that lane is
+      modeled from the repo's sharded CI truth rather than a guessed single-command approximation.
 workflows:
   default: verify
   verify:
@@ -111,12 +96,13 @@ workflows:
       task: verify
     notes: |
       Use `ota up --workflow verify` to run the declared setup plus backend verification sequence.
+      Treat this as the truthful backend build-proof lane for this slice, not as a quick local
+      smoke path or a claim that the full backend unit suite is modeled here already.
 agent:
   posture: readiness_strict
   entrypoint: setup
   default_task: verify
   safe_tasks:
-  - test
   - verify
   verify_after_changes:
   - verify
@@ -169,3 +155,5 @@ agent:
     Use `ota tasks --safe --use` to inspect the approved agent task surface before execution.
     Use `ota validate` before changes and `ota doctor` after edits.
     Use `ota run verify` for backend slice verification.
+    This contract slice currently proves backend build readiness, not the full sharded backend unit
+    suite that Grafana runs in its upstream CI.
