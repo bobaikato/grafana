@@ -2,9 +2,12 @@ version: 1
 metadata:
   ota:
     minimum_version: "1.6.18"
+# Pressure-test note (local branch):
+# - Remove the toolchain ownership migration before an upstream PR if the target PR must remain on
+#   an older Ota release that does not ship the same selected-path toolchain requirement behavior.
 project:
   name: grafana
-  description: Grafana backend readiness slice covering Go module setup plus pkg-scoped build proof
+  description: Grafana backend readiness slice covering Go toolchain setup plus pkg-scoped build proof
 execution:
   default_context: host
   contexts:
@@ -23,10 +26,10 @@ execution:
           - .cache
           - .go
           - go/pkg/mod
-runtimes:
-  go: '>=1.26.0 <1.27.0'
-tools:
-  go: '*'
+toolchains:
+  go:
+    provider: go
+    version: '1.26.3'
 tasks:
   build:
     context: host
@@ -44,6 +47,9 @@ tasks:
           run: go build ./pkg/...
     depends_on:
       - setup
+    requirements:
+      toolchains:
+        - go
     notes: Build the backend Go `pkg` module surface from repository root.
   setup:
     context: host
@@ -62,6 +68,9 @@ tasks:
     effects:
       network: true
       network_kind: dependency_hydration
+    requirements:
+      toolchains:
+        - go
     notes: Download Go module dependencies for backend tasks.
     internal: true
   verify:
@@ -80,6 +89,9 @@ tasks:
           run: "true"
     depends_on:
       - build
+    requirements:
+      toolchains:
+        - go
     safe_for_agent: true
     notes: |
       Contract-level verification path for backend slice.
@@ -147,8 +159,8 @@ agent:
   bootstrap:
     ota:
       note: Only install ota if it is missing and installation is approved.
-      sh: curl -fsSL https://dist.ota.run/install.sh | OTA_VERSION=v1.6.18 sh
-      powershell: $env:OTA_VERSION='v1.6.18'; irm https://dist.ota.run/install.ps1 | iex
+      sh: curl -fsSL https://dist.ota.run/install.sh | OTA_VERSION=v1.6.20 sh
+      powershell: $env:OTA_VERSION='v1.6.20'; irm https://dist.ota.run/install.ps1 | iex
   notes: |
     Use `ota workflows` to inspect declared workflow paths.
     Use `ota up --workflow verify` when you want setup and verification through one declared path.
