@@ -74,24 +74,11 @@ tasks:
     notes: Download Go module dependencies for backend tasks.
     internal: true
   verify:
-    context: host
     category: build
     description: Aggregate the proven backend build path for this contract slice.
-    run: "true"
-    execution:
-      default_mode: native
-      modes:
-        native:
-          context: host
-          run: "true"
-        container:
-          context: app
-          run: "true"
-    depends_on:
-      - build
-    requirements:
-      toolchains:
-        - go
+    aggregate:
+      tasks:
+        - build
     safe_for_agent: true
     notes: |
       Contract-level verification path for backend slice.
