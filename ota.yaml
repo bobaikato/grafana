@@ -1,7 +1,7 @@
 version: 1
 metadata:
   ota:
-    minimum_version: "1.6.18"
+    minimum_version: "1.6.20"
 # Pressure-test note (local branch):
 # - Remove the toolchain ownership migration before an upstream PR if the target PR must remain on
 #   an older Ota release that does not ship the same selected-path toolchain requirement behavior.
@@ -57,16 +57,19 @@ tasks:
     context: host
     category: setup
     description: Download Go module dependencies.
-    run: go mod download
+    prepare:
+      kind: dependency_hydration
+      medium: package_dependencies
+      source:
+        kind: go_modules
+        cwd: .
     execution:
       default_mode: native
       modes:
         native:
           context: host
-          run: go mod download
         container:
           context: app
-          run: go mod download
     effects:
       network: true
       network_kind: dependency_hydration
