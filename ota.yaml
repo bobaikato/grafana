@@ -28,8 +28,10 @@ execution:
           - go/pkg/mod
 toolchains:
   go:
-    provider: go
     version: '1.26.3'
+    fulfillment:
+      source: go
+      mode: run
 tasks:
   build:
     context: host
