@@ -37,16 +37,28 @@ tasks:
     context: host
     category: build
     description: Build the Go packages in this module.
-    run: go build ./pkg/...
+    command:
+      exe: go
+      args:
+        - build
+        - ./pkg/...
     execution:
       default_mode: native
       modes:
         native:
           context: host
-          run: go build ./pkg/...
+          command:
+            exe: go
+            args:
+              - build
+              - ./pkg/...
         container:
           context: app
-          run: go build ./pkg/...
+          command:
+            exe: go
+            args:
+              - build
+              - ./pkg/...
     depends_on:
       - setup
     requirements:
