@@ -78,8 +78,8 @@ jobs:
       - name: Set up ota
         uses: ota-run/setup@v1.0.8
         with:
-          source: contract
-          contract-path: ota.yaml
+          source: explicit
+          ota-version: v1.6.23
 
       - name: Validate contract
         shell: bash
