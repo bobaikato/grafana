@@ -149,8 +149,8 @@ agent:
     ota:
       note: Only install ota if it is missing and installation is approved.
       source:
-        kind: version
-        version: v1.6.23
+        kind: branch
+        branch: 1.6.23-implementation
   notes: |
     Use `ota workflows` to inspect declared workflow paths.
     Use `ota up --workflow proof:backend:pkg` when you want setup and verification through one declared path.
