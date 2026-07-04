@@ -76,7 +76,7 @@ jobs:
           ruby-version: "3.3"
 
       - name: Set up ota
-        uses: ota-run/setup@v1.0.8
+        uses: ota-run/setup@v1
         with:
           source: contract
           contract-path: ota.yaml
@@ -118,9 +118,9 @@ jobs:
             ota run "$task" --native --dry-run .
           done < ota-task-names.txt
 
-      - name: Dry-run verify workflow (native)
+      - name: Dry-run backend proof workflow (native)
         shell: bash
-        run: ota up --workflow verify --native --dry-run .
+        run: ota up --workflow proof:backend:pkg --native --dry-run .
 
       - name: Dry-run all non-internal tasks (container)
         if: ${{ matrix.full_proof }}
@@ -135,10 +135,10 @@ jobs:
             ota run "$task" --container --dry-run .
           done < ota-container-task-names.txt
 
-      - name: Dry-run verify workflow (container)
+      - name: Dry-run backend proof workflow (container)
         if: ${{ matrix.full_proof }}
         shell: bash
-        run: ota up --workflow verify --container --dry-run .
+        run: ota up --workflow proof:backend:pkg --container --dry-run .
 
       - name: Execute heavy proof tasks (native, Ubuntu)
         if: ${{ matrix.full_proof }}
@@ -154,11 +154,11 @@ jobs:
             ota run "$task" --native --stream .
           done < ota-native-exec-task-names.txt
 
-      - name: Execute heavy verify workflow proof (native, Ubuntu)
+      - name: Execute heavy backend proof workflow (native, Ubuntu)
         if: ${{ matrix.full_proof }}
         timeout-minutes: 90
         shell: bash
-        run: ota up --workflow verify --native --stream .
+        run: ota up --workflow proof:backend:pkg --native --stream .
 
       - name: Execute heavy proof tasks (container, Ubuntu)
         if: ${{ matrix.full_proof }}
@@ -174,11 +174,11 @@ jobs:
             ota run "$task" --container --stream .
           done < ota-container-exec-task-names.txt
 
-      - name: Execute heavy verify workflow proof (container, Ubuntu)
+      - name: Execute heavy backend proof workflow (container, Ubuntu)
         if: ${{ matrix.full_proof }}
         timeout-minutes: 90
         shell: bash
-        run: ota up --workflow verify --container --stream .
+        run: ota up --workflow proof:backend:pkg --container --stream .
 
       - name: Upload artifacts on failure
         if: failure()

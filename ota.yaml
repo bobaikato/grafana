@@ -1,10 +1,7 @@
 version: 1
 metadata:
   ota:
-    minimum_version: "1.6.22"
-# Pressure-test note (local branch):
-# - Remove the toolchain ownership migration before an upstream PR if the target PR must remain on
-#   an older Ota release that does not ship the same selected-path toolchain requirement behavior.
+    minimum_version: "1.6.23"
 project:
   name: grafana
   description: Grafana backend readiness slice covering Go toolchain setup plus pkg-scoped build proof
@@ -33,7 +30,7 @@ toolchains:
       source: go
       mode: run
 tasks:
-  build:
+  build:backend:pkg:
     context: host
     category: build
     description: Build the Go packages in this module.
@@ -78,12 +75,12 @@ tasks:
         - go
     notes: Download Go module dependencies for backend tasks.
     internal: true
-  verify:
+  proof:backend:pkg:
     category: build
     description: Aggregate the proven backend build path for this contract slice.
     aggregate:
       tasks:
-        - build
+        - build:backend:pkg
     safe_for_agent: true
     notes: |
       Contract-level verification path for backend slice.
@@ -91,25 +88,25 @@ tasks:
       It intentionally does not claim Grafana's broad backend unit-test surface until that lane is
       modeled from the repo's sharded CI truth rather than a guessed single-command approximation.
 workflows:
-  default: verify
-  verify:
+  default: proof:backend:pkg
+  proof:backend:pkg:
     description: Canonical Grafana backend verification path for this contract slice.
     setup:
       task: setup
     run:
-      task: verify
+      task: proof:backend:pkg
     notes: |
-      Use `ota up --workflow verify` to run the declared setup plus backend verification sequence.
+      Use `ota up --workflow proof:backend:pkg` to run the declared setup plus backend verification sequence.
       Treat this as the truthful backend build-proof lane for this slice, not as a quick local
       smoke path or a claim that the full backend unit suite is modeled here already.
 agent:
   posture: readiness_strict
   entrypoint: setup
-  default_task: verify
+  default_task: proof:backend:pkg
   safe_tasks:
-  - verify
+  - proof:backend:pkg
   verify_after_changes:
-  - verify
+  - proof:backend:pkg
   writable_paths:
   - apps/advisor
   - apps/annotation
@@ -151,13 +148,14 @@ agent:
   bootstrap:
     ota:
       note: Only install ota if it is missing and installation is approved.
-      sh: curl -fsSL https://dist.ota.run/install.sh | OTA_GIT_BRANCH=1.6.22-implementation sh -s -- --from-git
-      powershell: $env:OTA_GIT_BRANCH='1.6.22-implementation'; & ([scriptblock]::Create((irm https://dist.ota.run/install.ps1))) -FromGit
+      source:
+        kind: version
+        version: v1.6.23
   notes: |
     Use `ota workflows` to inspect declared workflow paths.
-    Use `ota up --workflow verify` when you want setup and verification through one declared path.
+    Use `ota up --workflow proof:backend:pkg` when you want setup and verification through one declared path.
     Use `ota tasks --safe --use` to inspect the approved agent task surface before execution.
     Use `ota validate` before changes and `ota doctor` after edits.
-    Use `ota run verify` for backend slice verification.
+    Use `ota run proof:backend:pkg` for backend slice verification.
     This contract slice currently proves backend build readiness, not the full sharded backend unit
     suite that Grafana runs in its upstream CI.
