@@ -89,7 +89,7 @@ jobs:
 
       - name: Doctor contract
         shell: bash
-        run: ota doctor .
+        run: ota doctor --workflow proof:backend:pkg .
 
       - name: List task surfaces
         shell: bash
@@ -106,12 +106,12 @@ jobs:
         shell: bash
         run: ota execution topology --json . > ota-execution-topology.json
 
-      - name: Dry-run all non-internal tasks (native)
+      - name: Dry-run backend task surface (native)
         shell: bash
         run: |
           set -euo pipefail
           ota tasks --json . > ota-tasks.json
-          node -e 'const fs=require("fs");const t=JSON.parse(fs.readFileSync("ota-tasks.json","utf8")).tasks||[];for(const x of t)console.log(x.name);' > ota-task-names.txt
+          node -e 'const fs=require("fs");const t=JSON.parse(fs.readFileSync("ota-tasks.json","utf8")).tasks||[];for(const x of t){if(!x.name.startsWith("devenv:observability:"))console.log(x.name)}' > ota-task-names.txt
           while IFS= read -r task; do
             [ -z "$task" ] && continue
             echo ">>> [native dry-run] $task"
@@ -122,13 +122,13 @@ jobs:
         shell: bash
         run: ota up --workflow proof:backend:pkg --native --dry-run .
 
-      - name: Dry-run all non-internal tasks (container)
+      - name: Dry-run backend task surface (container)
         if: ${{ matrix.full_proof }}
         shell: bash
         run: |
           set -euo pipefail
           ota tasks --json --via container . > ota-tasks-container.json
-          node -e 'const fs=require("fs");const t=JSON.parse(fs.readFileSync("ota-tasks-container.json","utf8")).tasks||[];for(const x of t)console.log(x.name);' > ota-container-task-names.txt
+          node -e 'const fs=require("fs");const t=JSON.parse(fs.readFileSync("ota-tasks-container.json","utf8")).tasks||[];for(const x of t){if(!x.name.startsWith("devenv:observability:"))console.log(x.name)}' > ota-container-task-names.txt
           while IFS= read -r task; do
             [ -z "$task" ] && continue
             echo ">>> [container dry-run] $task"
@@ -180,6 +180,24 @@ jobs:
         shell: bash
         run: ota up --workflow proof:backend:pkg --container --stream .
 
+      - name: Prove frontend-service observability Compose closure (Ubuntu)
+        if: ${{ matrix.full_proof }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ota doctor --workflow devenv:observability .
+          ota run devenv:observability:status --agent --dry-run --json .
+          ota run devenv:observability:up --dry-run --json .
+          ota run devenv:observability:stop --dry-run --json .
+          ota up --workflow devenv:observability --dry-run --json .
+          trap 'ota run devenv:observability:stop --stream . || true' EXIT
+          ota run devenv:observability:up --stream .
+          ota run devenv:observability:status --agent --stream .
+          ota receipt --json --archive --workflow devenv:observability . > ota-observability-receipt.json
+          ota receipt --json --baseline latest --workflow devenv:observability . > ota-observability-receipt-diff.json
+          ota run devenv:observability:stop --stream .
+          trap - EXIT
+
       - name: Upload artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -190,3 +208,5 @@ jobs:
             ota-execution-topology.json
             ota-tasks.json
             ota-tasks-container.json
+            ota-observability-receipt.json
+            ota-observability-receipt-diff.json

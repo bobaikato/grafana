@@ -1,10 +1,10 @@
 version: 1
 metadata:
   ota:
-    minimum_version: "1.6.23"
+    minimum_version: "1.6.24"
 project:
   name: grafana
-  description: Grafana backend readiness slice covering Go toolchain setup plus pkg-scoped build proof
+  description: Grafana backend build proof plus a narrow frontend-service Compose observability slice
 execution:
   default_context: host
   contexts:
@@ -81,12 +81,78 @@ tasks:
     aggregate:
       tasks:
         - build:backend:pkg
-    safe_for_agent: true
     notes: |
       Contract-level verification path for backend slice.
       This slice currently proves the backend build path across native and container execution.
       It intentionally does not claim Grafana's broad backend unit-test surface until that lane is
       modeled from the repo's sharded CI truth rather than a guessed single-command approximation.
+  devenv:observability:status:
+    category: dev
+    description: Inspect the selected frontend-service observability dependencies without mutation.
+    safe_for_agent: true
+    adapter_inputs:
+      overlays:
+        compose:
+          cwd: devenv/frontend-service
+          files:
+            - docker-compose.yaml
+    compose:
+      kind: ps
+      services:
+        - postgres
+        - prometheus
+        - loki
+        - tempo
+    requirements:
+      tools:
+        docker: "*"
+    notes: |
+      This is a narrow Compose dependency slice. It excludes Grafana's Tilt-owned application,
+      proxy, and frontend services.
+  devenv:observability:up:
+    category: dev
+    description: Start the selected digest-pinned frontend-service observability dependencies.
+    adapter_inputs:
+      overlays:
+        compose:
+          cwd: devenv/frontend-service
+          files:
+            - docker-compose.yaml
+    compose:
+      kind: up
+      detach: true
+      services:
+        - postgres
+        - prometheus
+        - loki
+        - tempo
+    requirements:
+      tools:
+        docker: "*"
+    effects:
+      network: true
+    notes: |
+      Tempo's declared init dependency is part of the selected runtime closure. This does not
+      claim the broader Tilt-managed frontend-service application path.
+  devenv:observability:stop:
+    category: dev
+    description: Stop the selected frontend-service observability dependency slice.
+    adapter_inputs:
+      overlays:
+        compose:
+          cwd: devenv/frontend-service
+          files:
+            - docker-compose.yaml
+    compose:
+      kind: stop
+      services:
+        - postgres
+        - prometheus
+        - loki
+        - tempo
+    requirements:
+      tools:
+        docker: "*"
 workflows:
   default: proof:backend:pkg
   proof:backend:pkg:
@@ -99,12 +165,17 @@ workflows:
       Use `ota up --workflow proof:backend:pkg` to run the declared setup plus backend verification sequence.
       Treat this as the truthful backend build-proof lane for this slice, not as a quick local
       smoke path or a claim that the full backend unit suite is modeled here already.
+  devenv:observability:
+    intent: local_development
+    description: Start the narrow digest-pinned frontend-service observability dependencies.
+    run:
+      task: devenv:observability:up
 agent:
   posture: readiness_strict
   entrypoint: setup
   default_task: proof:backend:pkg
   safe_tasks:
-  - proof:backend:pkg
+  - devenv:observability:status
   verify_after_changes:
   - proof:backend:pkg
   writable_paths:
@@ -150,12 +221,15 @@ agent:
       note: Only install ota if it is missing and installation is approved.
       source:
         kind: branch
-        branch: 1.6.23-implementation
+        branch: 1.6.24-implementation
   notes: |
     Use `ota workflows` to inspect declared workflow paths.
     Use `ota up --workflow proof:backend:pkg` when you want setup and verification through one declared path.
     Use `ota tasks --safe --use` to inspect the approved agent task surface before execution.
     Use `ota validate` before changes and `ota doctor` after edits.
     Use `ota run proof:backend:pkg` for backend slice verification.
+    Use `ota tasks --safe --use` before inspecting the frontend-service observability dependencies.
+    Use `ota up --workflow devenv:observability` only for the narrow Compose dependency slice,
+    not as a replacement for the documented Tilt-owned frontend-service path.
     This contract slice currently proves backend build readiness, not the full sharded backend unit
     suite that Grafana runs in its upstream CI.
