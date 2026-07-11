@@ -131,6 +131,7 @@ tasks:
         docker: "*"
     effects:
       network: true
+      network_kind: container_image_hydration
     notes: |
       Tempo's declared init dependency is part of the selected runtime closure. This does not
       claim the broader Tilt-managed frontend-service application path.
