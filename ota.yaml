@@ -1,7 +1,7 @@
 version: 1
 metadata:
   ota:
-    minimum_version: "1.6.24"
+    minimum_version: "1.6.25"
 project:
   name: grafana
   description: Grafana backend build proof plus a narrow frontend-service Compose observability slice
@@ -221,8 +221,8 @@ agent:
     ota:
       note: Only install ota if it is missing and installation is approved.
       source:
-        kind: branch
-        branch: 1.6.24-implementation
+        kind: version
+        version: v1.6.25
   notes: |
     Use `ota workflows` to inspect declared workflow paths.
     Use `ota up --workflow proof:backend:pkg` when you want setup and verification through one declared path.
